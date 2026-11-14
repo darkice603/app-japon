@@ -48,6 +48,7 @@ Je suis designer UX/UI, pas développeur : explique simplement ce que tu fais, a
 - Numéro du jour = date − date de début du voyage + 1.
 - **Hors ligne façon Polarsteps** : ajout possible sans réseau, synchro au retour (identifiants générés côté app dès l'étape 3, synchro à l'étape 9).
 - Photos : 3 max par lieu. Anciens voyages ressaisis à la main.
+- **Supabase partagé** : l'app utilise le projet Supabase « voyage » existant, qui sert déjà à une **autre app de voyage encore utilisée**. Cohabitation obligatoire : toutes nos tables dans un schéma dédié `japon` (jamais dans `public`), bucket Storage dédié, aucune modification ni suppression de l'existant. Commencer par un inventaire en lecture seule.
 - Comptes existants : GitHub, Supabase, Vercel. À créer : Google Cloud (carte bancaire + quotas, étape 5), Pexels (étape 6).
 - Navigation flottante (B1) : Voyages · Carte · [+] · Restos · Budget ; onglet actif = pilule noire icône + libellé. Préfectures (B9) s'ouvre depuis la carte « 23/47 » de B1.
 
