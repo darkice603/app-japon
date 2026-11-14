@@ -102,13 +102,15 @@ export default function Voyage() {
 
       {etapes.map((et, i) => (
         <section key={et.id} className="mt-8">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="min-w-0 truncate font-titre text-2xl">
-              <span className="text-texte-2/50">{i + 1}.</span> {et.city}
-            </h2>
-            <p className="shrink-0 text-sm text-texte-2">{periode(et.arrival_date, et.departure_date)}</p>
-          </div>
-          {et.prefecture_code && <p className="text-sm text-texte-2">{prefectures.find((p) => p.code === et.prefecture_code)?.name_fr}</p>}
+          <Link to={`/ville/${et.id}`} className="block">
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 className="min-w-0 truncate font-titre text-2xl">
+                <span className="text-texte-2/50">{i + 1}.</span> {et.city} <span className="text-texte-2/50">›</span>
+              </h2>
+              <p className="shrink-0 text-sm text-texte-2">{periode(et.arrival_date, et.departure_date)}</p>
+            </div>
+            {et.prefecture_code && <p className="text-sm text-texte-2">{prefectures.find((p) => p.code === et.prefecture_code)?.name_fr}</p>}
+          </Link>
 
           <ul className="mt-3 space-y-2">
             {[...et.places]

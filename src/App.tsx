@@ -9,13 +9,13 @@ import FicheLieu from './screens/FicheLieu'
 import Voyage from './screens/Voyage'
 import Carte from './screens/Carte'
 import Chercher from './screens/Chercher'
+import BudgetEcran from './screens/Budget'
+import Ville from './screens/Ville'
 import { useAuth } from './lib/auth'
 import { useProfil } from './lib/profil'
 
 const ecrans = [
   { path: '/restos', code: 'B6', titre: 'Mes restos' },
-  { path: '/ville/:id', code: 'B7', titre: 'Ville' },
-  { path: '/budget', code: 'B8', titre: 'Budget' },
   { path: '/prefectures', code: 'B9', titre: 'Préfectures' },
 ]
 
@@ -40,6 +40,8 @@ export default function App() {
         <Route path="/voyage/:id" element={<Voyage />} />
         <Route path="/carte" element={<Carte />} />
         <Route path="/chercher" element={<Chercher />} />
+        <Route path="/budget" element={<BudgetEcran />} />
+        <Route path="/ville/:id" element={<Ville />} />
         {ecrans.map((e) => (
           <Route key={e.path} path={e.path} element={<EcranVide code={e.code} titre={e.titre} />} />
         ))}
