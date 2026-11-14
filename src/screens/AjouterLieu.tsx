@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Feuille, { styles } from '../components/Feuille'
+import ChoixPosition from '../components/ChoixPosition'
 import { supabase } from '../lib/supabase'
 import { CATEGORIES, categorie, libelleNote, type CategorieId } from '../lib/categories'
 import { tauxJpyEur } from '../lib/change'
@@ -10,6 +11,8 @@ type EtapeChoix = {
   id: string
   city: string
   arrival_date: string | null
+  lat: number | null
+  lng: number | null
   departure_date: string | null
   trip_id: string
   trips: { name: string; start_date: string | null } | null
@@ -38,6 +41,7 @@ export default function AjouterLieu() {
   const [note, setNote] = useState<number | null>(null)
   const [retour, setRetour] = useState<Retour | null>(null)
   const [notePerso, setNotePerso] = useState('')
+  const [position, setPosition] = useState<{ lat: number; lng: number } | null>(null)
   const [taux, setTaux] = useState<number | null>(null)
   const [depenseId, setDepenseId] = useState<string | null>(null)
   const [articlesInitiaux, setArticlesInitiaux] = useState<string[]>([])
@@ -51,7 +55,7 @@ export default function AjouterLieu() {
   useEffect(() => {
     supabase
       .from('stops')
-      .select('id, city, arrival_date, departure_date, trip_id, trips(name, start_date)')
+      .select('id, city, arrival_date, departure_date, lat, lng, trip_id, trips(name, start_date)')
       .order('arrival_date', { ascending: false, nullsFirst: false })
       .then(({ data, error }) => {
         if (error) return setErreur(error.message)
@@ -78,6 +82,7 @@ export default function AjouterLieu() {
       setNote(l.rating)
       setRetour(l.would_return)
       setNotePerso(l.note ?? '')
+      if (l.lat != null && l.lng != null) setPosition({ lat: l.lat, lng: l.lng })
       setArticles((items.data ?? []).map((a) => ({ id: a.id, label: a.label, prix: a.price_jpy?.toString() ?? '' })))
       setArticlesInitiaux((items.data ?? []).map((a) => a.id))
       if (depense.data) {
@@ -109,6 +114,12 @@ export default function AjouterLieu() {
   const sommeArticles = articles.reduce((s, a) => s + (Number(a.prix) || 0), 0)
   const total = Number(prix) || sommeArticles
   const euros = taux && total ? total * taux : null
+
+  const etapeChoisie = etapes?.find((e) => e.id === etapeId)
+  const centreVille = useMemo(
+    () => (etapeChoisie?.lat != null && etapeChoisie?.lng != null ? { lat: etapeChoisie.lat, lng: etapeChoisie.lng } : null),
+    [etapeChoisie?.lat, etapeChoisie?.lng],
+  )
 
   const etapesParVoyage = useMemo(() => {
     const groupes = new Map<string, EtapeChoix[]>()
@@ -149,6 +160,8 @@ export default function AjouterLieu() {
       rating: note,
       would_return: retour,
       note: notePerso.trim() || null,
+      lat: position?.lat ?? null,
+      lng: position?.lng ?? null,
     })
     if (errLieu) return echec(errLieu.message)
 
@@ -316,6 +329,18 @@ export default function AjouterLieu() {
                 </label>
                 <input id="quand" type="datetime-local" value={quand} onChange={(e) => setQuand(e.target.value)} className={`${styles.champ} px-3 text-sm`} />
               </div>
+            </div>
+
+            {/* Où sur la carte (facultatif) */}
+            <div>
+              <p className={styles.label}>Sur la carte</p>
+              <ChoixPosition
+                position={position}
+                centreVille={centreVille}
+                categorieId={cat}
+                typeId={type}
+                onChange={setPosition}
+              />
             </div>
 
             {/* Combien tu as payé ? */}

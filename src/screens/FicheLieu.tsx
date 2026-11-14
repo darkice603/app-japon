@@ -149,7 +149,7 @@ export default function FicheLieu() {
 
         {/* Actions */}
         <div className="mt-6 grid grid-cols-[1fr_1.1fr] gap-3">
-          <Link to="/carte" className="flex min-h-14 items-center justify-center gap-2 rounded-full bg-carte font-bold">
+          <Link to={`/carte?lieu=${lieu.id}`} className="flex min-h-14 items-center justify-center gap-2 rounded-full bg-carte font-bold">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
               <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zm0 0v14m6-12v14" />
             </svg>

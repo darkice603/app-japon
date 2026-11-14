@@ -10,7 +10,7 @@ type Voyage = {
   name: string
   start_date: string | null
   end_date: string | null
-  stops: { city: string; prefecture_code: number | null; arrival_date: string | null }[]
+  stops: { city: string; prefecture_code: number | null; arrival_date: string | null; lat: number | null; lng: number | null }[]
   expenses: { amount_jpy: number; amount_eur: number | null }[]
 }
 
@@ -38,7 +38,7 @@ export default function MesVoyages() {
     Promise.all([
       supabase
         .from('trips')
-        .select('id, name, start_date, end_date, stops(city, prefecture_code, arrival_date), expenses(amount_jpy, amount_eur)')
+        .select('id, name, start_date, end_date, stops(city, prefecture_code, arrival_date, lat, lng), expenses(amount_jpy, amount_eur)')
         .order('start_date', { ascending: false, nullsFirst: false }),
       supabase.from('places').select('id', { count: 'exact', head: true }).not('rating', 'is', null),
     ]).then(([voyages, lieux]) => {
@@ -173,9 +173,8 @@ function Rangee({ titre, children }: { titre: string; children: ReactNode }) {
 }
 
 function CarteVedette({ voyage, enCours, jour, onOuvrir }: { voyage: Voyage; enCours: boolean; jour: string; onOuvrir: () => void }) {
-  const villes = [...voyage.stops]
-    .sort((a, b) => (a.arrival_date ?? '9999').localeCompare(b.arrival_date ?? '9999'))
-    .map((s) => s.city)
+  const etapes = [...voyage.stops].sort((a, b) => (a.arrival_date ?? '9999').localeCompare(b.arrival_date ?? '9999'))
+  const villes = etapes.map((s) => s.city)
   const totalJours = voyage.start_date && voyage.end_date ? ecartJours(voyage.start_date, voyage.end_date) + 1 : null
   const numeroJour = voyage.start_date ? ecartJours(voyage.start_date, jour) + 1 : null
   const dansJours = voyage.start_date ? ecartJours(jour, voyage.start_date) : null
@@ -198,15 +197,29 @@ function CarteVedette({ voyage, enCours, jour, onOuvrir }: { voyage: Voyage; enC
         </div>
         {villes.length > 0 && <p className="mt-3 text-sm text-texte-2">{villes.join(' → ')}</p>}
       </div>
-      <MiniCarte etapes={villes.length} />
+      <MiniCarte etapes={etapes} />
     </button>
   )
 }
 
-/** Mini-carte décorative provisoire (la vraie carte MapLibre arrive à l'étape 4). */
-function MiniCarte({ etapes }: { etapes: number }) {
-  const n = Math.max(2, Math.min(etapes, 5))
-  const points = Array.from({ length: n }, (_, i) => [16 + (i * 88) / (n - 1), 104 - (i * 88) / (n - 1)])
+/**
+ * Mini-carte de l'itinéraire : les villes placées à leur vraie position relative
+ * (nord en haut). Sans positions connues, un tracé décoratif.
+ */
+function MiniCarte({ etapes }: { etapes: { lat: number | null; lng: number | null }[] }) {
+  const connues = etapes.filter((e) => e.lat != null && e.lng != null) as { lat: number; lng: number }[]
+  let points: number[][]
+  if (connues.length >= 2) {
+    const lats = connues.map((e) => e.lat)
+    const lngs = connues.map((e) => e.lng)
+    const [minLat, maxLat, minLng, maxLng] = [Math.min(...lats), Math.max(...lats), Math.min(...lngs), Math.max(...lngs)]
+    const etendue = Math.max(maxLat - minLat, maxLng - minLng, 0.05)
+    const [cLat, cLng] = [(minLat + maxLat) / 2, (minLng + maxLng) / 2]
+    points = connues.map((e) => [60 + ((e.lng - cLng) / etendue) * 88, 60 - ((e.lat - cLat) / etendue) * 88])
+  } else {
+    const n = Math.max(2, Math.min(etapes.length, 5))
+    points = Array.from({ length: n }, (_, i) => [16 + (i * 88) / (n - 1), 104 - (i * 88) / (n - 1)])
+  }
   const couleurs = ['#8F72F2', '#3DB3C7', '#5C8BD6', '#F08A3C', '#E0609A']
   return (
     <svg viewBox="0 0 120 120" className="h-[120px] w-[120px] shrink-0 rounded-[22px] bg-[#EDEDE9]" aria-hidden="true">
