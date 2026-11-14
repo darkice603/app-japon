@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+/* Design tokens, direction B "La carte d'abord" */
+@theme {
+  --font-titre: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-kanji: "Zen Maru Gothic", sans-serif;
+
+  --color-encre: #121212;
+  --color-fond: #F4F4F1;
+  --color-carte: #FFFFFF;
+  --color-texte-2: #5B5B5B;
+
+  /* Catégories : vif / clair / foncé */
+  --color-manger: #F08A3C;    --color-manger-clair: #FFE7D3;    --color-manger-fonce: #C25E14;
+  --color-cafe: #E0A800;      --color-cafe-clair: #FFF1C2;      --color-cafe-fonce: #8A6200;
+  --color-dormir: #8F72F2;    --color-dormir-clair: #EAE3FF;    --color-dormir-fonce: #5B3FC4;
+  --color-visiter: #3DB3C7;   --color-visiter-clair: #D8F1F5;   --color-visiter-fonce: #1D7C8C;
+  --color-transport: #5C8BD6; --color-transport-clair: #DCE8FA; --color-transport-fonce: #2F5FA8;
+  --color-shopping: #E0609A;  --color-shopping-clair: #FCE1EC;  --color-shopping-fonce: #A8326A;
+
+  --radius-carte: 26px;
+  --radius-feuille: 34px;
+}
+
+html, body, #root { min-height: 100%; }
+body {
+  margin: 0;
+  background: var(--color-fond);
+  color: var(--color-encre);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
