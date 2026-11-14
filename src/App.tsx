@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import NavFlottante from './components/NavFlottante'
 import EcranVide from './screens/EcranVide'
+import Connexion from './screens/Connexion'
 
 const ecrans = [
   { path: '/', code: 'B1', titre: 'Mes voyages' },
@@ -21,7 +22,8 @@ export default function App() {
         {ecrans.map((e) => (
           <Route key={e.path} path={e.path} element={<EcranVide code={e.code} titre={e.titre} />} />
         ))}
-        <Route path="*" element={<EcranVide code="404" titre="Page introuvable" />} />
+        <Route path="/connexion" element={<Connexion />} />
+        <Route path="*"element={<EcranVide code="404" titre="Page introuvable" />} />
       </Routes>
       <NavFlottante />
     </>

@@ -49,6 +49,8 @@ Je suis designer UX/UI, pas développeur : explique simplement ce que tu fais, a
 - **Hors ligne façon Polarsteps** : ajout possible sans réseau, synchro au retour (identifiants générés côté app dès l'étape 3, synchro à l'étape 9).
 - Photos : 3 max par lieu. Anciens voyages ressaisis à la main.
 - **Supabase partagé** : l'app utilise le projet Supabase « voyage » existant, qui sert déjà à une **autre app de voyage encore utilisée**. Cohabitation obligatoire : toutes nos tables dans un schéma dédié `japon` (jamais dans `public`), bucket Storage dédié, aucune modification ni suppression de l'existant. Commencer par un inventaire en lecture seule.
+- **Connexion par code reçu par e-mail** (OTP, comme l'autre app, pas de mot de passe). Comptes Supabase partagés avec l'autre app ; l'app Japon ne crée pas de compte (`shouldCreateUser: false`). Le trigger `handle_new_user` de l'autre app crée un profil dans `public.profiles` à chaque inscription : ne pas y toucher.
+- Étape 2 faite : script `supabase/migrations/001_japon.sql` (schéma `japon`, bucket privé `japon-photos`), `japon` ajouté aux « Exposed schemas » de la Data API, client dans `src/lib/supabase.ts`, clés dans `.env.local` (modèle `.env.example`).
 - Comptes existants : GitHub, Supabase, Vercel. À créer : Google Cloud (carte bancaire + quotas, étape 5), Pexels (étape 6).
 - Navigation flottante (B1) : Voyages · Carte · [+] · Restos · Budget ; onglet actif = pilule noire icône + libellé. Préfectures (B9) s'ouvre depuis la carte « 23/47 » de B1.
 
