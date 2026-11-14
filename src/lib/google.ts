@@ -59,18 +59,18 @@ export const photosGoogle = (placeId: string) => appeler<{ photos: PhotoGoogle[]
 /** Adresse temporaire d'une photo Google. */
 export const urlPhotoGoogle = (name: string, maxWidth = 1000) => appeler<{ url: string }>({ action: 'photo', name, maxWidth }).then((r) => r.url)
 
-export type PhotoPexels = { url: string; auteur: string; lienAuteur: string; lien: string }
+export type PhotoBanque = { url: string; auteur: string; lienAuteur: string; lien: string }
 
-/** Photo Pexels pour une recherche (gardée en mémoire sur l'appareil pour économiser les requêtes). */
-export async function photoPexels(query: string): Promise<PhotoPexels | null> {
-  const cle = `pexels:${query.toLowerCase()}`
+/** Photo Unsplash de secours pour une recherche (gardée en mémoire sur l'appareil pour économiser les requêtes). */
+export async function photoBanque(query: string): Promise<PhotoBanque | null> {
+  const cle = `unsplash:${query.toLowerCase()}`
   try {
     const memo = localStorage.getItem(cle)
     if (memo) return JSON.parse(memo)
   } catch {
     /* stockage indisponible */
   }
-  const { photo } = await appeler<{ photo: PhotoPexels | null }>({ action: 'pexels', query })
+  const { photo } = await appeler<{ photo: PhotoBanque | null }>({ action: 'banque', query })
   try {
     if (photo) localStorage.setItem(cle, JSON.stringify(photo))
   } catch {

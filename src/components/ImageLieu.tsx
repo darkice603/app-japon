@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import Couverture from './Couverture'
 import { photosDuLieu, type PhotoEnregistree } from '../lib/photos'
-import { photoPexels, photosGoogle, urlPhotoGoogle } from '../lib/google'
+import { photoBanque, photosGoogle, urlPhotoGoogle } from '../lib/google'
 
-/** Mots-clés Pexels (en anglais) par type de lieu, si la ville ne donne rien. */
-const PEXELS_TYPE: Record<string, string> = {
+/** Mots-clés Unsplash (en anglais) par type de lieu, si la ville ne donne rien. */
+const MOTS_TYPE: Record<string, string> = {
   ramen: 'ramen',
   izakaya: 'izakaya',
   sushi: 'sushi',
@@ -22,11 +22,11 @@ const PEXELS_TYPE: Record<string, string> = {
 type Image =
   | { source: 'moi'; url: string }
   | { source: 'google'; url: string; auteur: string | null; lien: string | null }
-  | { source: 'pexels'; url: string; auteur: string; lien: string }
+  | { source: 'banque'; url: string; auteur: string; lienAuteur: string; lien: string }
 
 /**
  * Grande image en haut de B5, par ordre de priorité :
- * 1. mes photos · 2. photo Google (crédit de l'auteur) · 3. photo Pexels (lien Pexels) · 4. couverture générée.
+ * 1. mes photos · 2. photo Google (crédit de l'auteur) · 3. photo Unsplash (crédit + lien) · 4. couverture générée.
  */
 export default function ImageLieu({
   lieu,
@@ -58,11 +58,11 @@ export default function ImageLieu({
           }
         }
 
-        const requetes = [lieu.ville && `${lieu.ville} japan`, PEXELS_TYPE[lieu.type ?? ''] ?? 'japan'].filter(Boolean) as string[]
+        const requetes = [lieu.ville && `${lieu.ville} japan`, MOTS_TYPE[lieu.type ?? ''] ?? 'japan'].filter(Boolean) as string[]
         for (const q of requetes) {
-          const p = await photoPexels(q).catch(() => null)
+          const p = await photoBanque(q).catch(() => null)
           if (annule) return
-          if (p) return setImage({ source: 'pexels', url: p.url, auteur: p.auteur, lien: p.lien })
+          if (p) return setImage({ source: 'banque', url: p.url, auteur: p.auteur, lienAuteur: p.lienAuteur, lien: p.lien })
         }
       } finally {
         if (!annule) setPret(true)
@@ -83,7 +83,7 @@ export default function ImageLieu({
       {/* Toucher la grande photo l'agrandit (placé avant les vignettes et crédits, qui restent cliquables) */}
       {mesPhotos.length > 0 && <button onClick={() => setVisionneuse(0)} aria-label="Agrandir la photo" className="absolute inset-0" />}
 
-      {/* Crédit obligatoire pour Google et Pexels */}
+      {/* Crédit obligatoire pour Google et Unsplash */}
       {image?.source === 'google' && (
         <a
           href={image.lien ?? undefined}
@@ -94,15 +94,18 @@ export default function ImageLieu({
           Photo : {image.auteur ?? 'Google'} · Google
         </a>
       )}
-      {image?.source === 'pexels' && (
-        <a
-          href={image.lien}
-          target="_blank"
-          rel="noreferrer"
-          className="absolute bottom-4 left-4 max-w-[60%] truncate rounded-full bg-black/55 px-3 py-1 text-xs font-semibold text-white"
-        >
-          Photo : {image.auteur} · Pexels
-        </a>
+      {image?.source === 'banque' && (
+        // Règle Unsplash : nom de l'auteur (lien vers son profil) + lien vers Unsplash
+        <p className="absolute bottom-4 left-4 max-w-[60%] truncate rounded-full bg-black/55 px-3 py-1 text-xs font-semibold text-white">
+          Photo :{' '}
+          <a href={image.lienAuteur} target="_blank" rel="noreferrer" className="underline">
+            {image.auteur}
+          </a>{' '}
+          ·{' '}
+          <a href={image.lien} target="_blank" rel="noreferrer" className="underline">
+            Unsplash
+          </a>
+        </p>
       )}
 
       {/* Mes photos en vignettes (comme la maquette B5) */}

@@ -11,7 +11,7 @@ Je suis designer UX/UI, pas développeur : explique simplement ce que tu fais, a
 - **Carte** : MapLibre GL JS + fond de carte gratuit (OpenFreeMap ou MapTiler, offre gratuite)
 - **Base de données, comptes, photos** : Supabase (Postgres + Auth + Storage), plan gratuit
 - **Recherche de lieux** : Google Places API (New) : Autocomplete + Place Details
-- **Photos de ville / type de lieu** : Pexels API
+- **Photos de ville / type de lieu** : Unsplash API (Pexels prévu au départ, clés suspendues)
 - **Taux de change** : API Frankfurter (taux BCE, gratuit, sans clé), au **taux du jour de la dépense**
 - **Photos** : compression avant envoi (browser-image-compression), lecture date + GPS (exifr)
 - **Hébergement** : Vercel
@@ -54,7 +54,7 @@ Je suis designer UX/UI, pas développeur : explique simplement ce que tu fais, a
 - Étape 3 faite : table `japon.profils` (prénom, 002), recherche de villes via **Photon/OpenStreetMap** (gratuit, sans clé ; préfecture auto + `name_ja`, `lat`, `lng` sur `stops`, 003), **page voyage** `/voyage/:id` (pas de maquette, style B1) qui liste villes et lieux, B4 avec « j'y retournerais » en 3 pilules oui/bof/non, **dépense auto + taux Frankfurter déjà faits** (avancés de l'étape 7), bouton + → B4 en attendant B3 (étape 5).
 - Étape 4 faite : MapLibre (`setWorkerUrl` avec `?url` pour Vite) + **OpenFreeMap positron** (sans clé). B2 : filtres, épingles kanji (bordure pointillée = position approximative autour du centre de la ville), panneau « Ta journée » (lieux + dépenses, flèches de jour, mini-couvertures). Position d'un lieu choisie sur une mini-carte dans B4 (facultatif) ; Google la remplira à l'étape 5. Gros bundle (MapLibre) : découper/charger à la demande à l'étape 9.
 - Étape 5 faite : Edge Function **`japon-places`** (secret `JAPON_GOOGLE_PLACES_KEY`, clé restreinte à Places API (New), JWT vérifié) : `autocomplete` (Japon, fr, biais sur la ville de l'étape, session token), `details` (fr + nom ja), `photo` (URL temporaire). B3 → préremplit B4 (nom, nom japonais, catégorie/type déduits des types Google, position). **Décision 14/11/2026** : on garde aussi le **nom et la position** choisis (données de l'utilisateur, modifiables) en plus du `place_id` ; adresse et photos Google redemandées à l'affichage. À revoir si commercialisation. « Autour de moi » et « Ouvert » de la maquette B3 non faits.
-- Comptes existants : GitHub, Supabase, Vercel. À créer : Google Cloud (carte bancaire + quotas, étape 5), Pexels (étape 6).
+- Comptes existants : GitHub, Supabase, Vercel. Créés : Google Cloud (étape 5), Unsplash (étape 6).
 - Navigation flottante (B1) : Voyages · Carte · [+] · Restos · Budget ; onglet actif = pilule noire icône + libellé. Préfectures (B9) s'ouvre depuis la carte « 23/47 » de B1.
 
 ## Méthode de travail (économie de contexte)
@@ -86,7 +86,7 @@ Maquettes de référence : captures dans `/design` (écrans B1 à B10). Respecte
 **Image d'un lieu, par ordre de priorité**
 1. Mes photos
 2. Photo Google du lieu (avec crédit de l'auteur)
-3. Photo Pexels de la ville ou du type de lieu (avec lien Pexels)
+3. Photo Unsplash de la ville ou du type de lieu (crédit auteur + lien Unsplash) — remplace Pexels (nouvelles clés suspendues, 14/11/2026)
 4. Couverture générée : fond clair de la catégorie + motif (nouilles, grains, futon, seigaiha, rails, ichimatsu) + grand kanji du type (麺 ramen, 酒 izakaya, 寿 sushi, 食 resto, 茶 café, 宿 hôtel, 湯 onsen, 城 château, 寺 temple, 景 vue, 駅 gare, 買 konbini)
 
 ## Écrans

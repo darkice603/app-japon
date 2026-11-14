@@ -10,7 +10,7 @@
 //   { action: "details", placeId, sessionToken? }
 //   { action: "photo", name, maxWidth? }
 //   { action: "photosLieu", placeId }
-//   { action: "pexels", query }   (clé Pexels : secret JAPON_PEXELS_KEY)
+//   { action: "banque", query }   (photo Unsplash de secours : secret JAPON_UNSPLASH_KEY)
 // =====================================================================
 
 const CLE = Deno.env.get('JAPON_GOOGLE_PLACES_KEY') ?? ''
@@ -119,22 +119,30 @@ Deno.serve(async (req) => {
       })
     }
 
-    // 4. Photo Pexels (ville ou type de lieu) — secret JAPON_PEXELS_KEY
-    if (corps.action === 'pexels') {
-      const clePexels = Deno.env.get('JAPON_PEXELS_KEY') ?? ''
-      if (!clePexels) return reponse({ erreur: 'Clé Pexels absente (secret JAPON_PEXELS_KEY)' }, 500)
+    // 4. Photo de secours Unsplash (ville ou type de lieu) — secret JAPON_UNSPLASH_KEY
+    //    (remplace Pexels, dont les nouvelles clés sont suspendues)
+    if (corps.action === 'banque') {
+      const cleUnsplash = Deno.env.get('JAPON_UNSPLASH_KEY') ?? ''
+      if (!cleUnsplash) return reponse({ erreur: 'Clé Unsplash absente (secret JAPON_UNSPLASH_KEY)' }, 500)
       const requete = String(corps.query ?? '').slice(0, 80)
       if (!requete.trim()) return reponse({ erreur: 'Recherche vide' }, 400)
       const r = await fetch(
-        `https://api.pexels.com/v1/search?query=${encodeURIComponent(requete)}&per_page=5&orientation=landscape`,
-        { headers: { Authorization: clePexels } },
+        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(requete)}&per_page=5&orientation=landscape&content_filter=high`,
+        { headers: { Authorization: `Client-ID ${cleUnsplash}`, 'Accept-Version': 'v1' } },
       )
-      if (!r.ok) return reponse({ erreur: `Pexels ${r.status}` }, 502)
-      const p = await r.json()
-      const photo = p.photos?.[0]
+      if (!r.ok) return reponse({ erreur: `Unsplash ${r.status}` }, 502)
+      const u = await r.json()
+      const photo = u.results?.[0]
+      // Règles Unsplash : afficher l'image depuis leurs serveurs + créditer l'auteur avec un lien
+      const suivi = 'utm_source=app_japon&utm_medium=referral'
       return reponse({
         photo: photo
-          ? { url: photo.src?.large, auteur: photo.photographer, lienAuteur: photo.photographer_url, lien: photo.url }
+          ? {
+              url: photo.urls?.regular,
+              auteur: photo.user?.name,
+              lienAuteur: `${photo.user?.links?.html}?${suivi}`,
+              lien: `https://unsplash.com/?${suivi}`,
+            }
           : null,
       })
     }
