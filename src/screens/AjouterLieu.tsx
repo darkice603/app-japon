@@ -6,6 +6,8 @@ import { supabase } from '../lib/supabase'
 import { CATEGORIES, categorie, libelleNote, type CategorieId } from '../lib/categories'
 import { tauxJpyEur } from '../lib/change'
 import { aujourdhui } from '../lib/dates'
+import { useAuth } from '../lib/auth'
+import { MAX_PHOTOS, envoyerPhoto, photosDuLieu, preparerPhoto, supprimerPhotos, type PhotoEnregistree, type PhotoPreparee } from '../lib/photos'
 import type { LieuGoogle } from './Chercher'
 
 type EtapeChoix = {
@@ -48,6 +50,31 @@ export default function AjouterLieu() {
     google?.lat != null && google?.lng != null ? { lat: google.lat, lng: google.lng } : null,
   )
   const [googlePlaceId, setGooglePlaceId] = useState<string | null>(google?.placeId ?? null)
+  // Photos : déjà enregistrées / retirées / nouvelles (envoyées à l'enregistrement)
+  const { session } = useAuth()
+  const [photosExistantes, setPhotosExistantes] = useState<PhotoEnregistree[]>([])
+  const [photosRetirees, setPhotosRetirees] = useState<PhotoEnregistree[]>([])
+  const [photosNouvelles, setPhotosNouvelles] = useState<PhotoPreparee[]>([])
+  const [preparation, setPreparation] = useState(false)
+  const nbPhotos = photosExistantes.length + photosNouvelles.length
+
+  async function ajouterPhotos(fichiers: FileList | null) {
+    if (!fichiers?.length) return
+    setPreparation(true)
+    try {
+      const place = MAX_PHOTOS - nbPhotos
+      const preparees = await Promise.all([...fichiers].slice(0, place).map(preparerPhoto))
+      setPhotosNouvelles((liste) => [...liste, ...preparees])
+      // La photo peut placer le lieu sur la carte et dater la visite
+      const avecGps = preparees.find((p) => p.lat != null && p.lng != null)
+      if (avecGps) setPosition((actuelle) => actuelle ?? { lat: avecGps.lat!, lng: avecGps.lng! })
+      const avecDate = preparees.find((p) => p.date)
+      if (avecDate && !idExistant && nbPhotos === 0) setQuand(versLocal(new Date(avecDate.date!)))
+    } catch (e) {
+      setErreur(`Photo illisible : ${(e as Error).message}`)
+    }
+    setPreparation(false)
+  }
   const [taux, setTaux] = useState<number | null>(null)
   const [depenseId, setDepenseId] = useState<string | null>(null)
   const [articlesInitiaux, setArticlesInitiaux] = useState<string[]>([])
@@ -90,6 +117,7 @@ export default function AjouterLieu() {
       setNotePerso(l.note ?? '')
       if (l.lat != null && l.lng != null) setPosition({ lat: l.lat, lng: l.lng })
       setGooglePlaceId(l.google_place_id ?? null)
+      photosDuLieu(idExistant).then(setPhotosExistantes).catch(() => {})
       setArticles((items.data ?? []).map((a) => ({ id: a.id, label: a.label, prix: a.price_jpy?.toString() ?? '' })))
       setArticlesInitiaux((items.data ?? []).map((a) => a.id))
       if (depense.data) {
@@ -207,6 +235,14 @@ export default function AjouterLieu() {
       if (error) return echec(error.message)
     }
 
+    // Photos : on retire celles qu'on a enlevées, puis on envoie les nouvelles
+    try {
+      await supprimerPhotos(photosRetirees)
+      for (const p of photosNouvelles) await envoyerPhoto(p, session!.user.id, { placeId: id })
+    } catch (e) {
+      return echec(`Lieu enregistré, mais souci avec les photos : ${(e as Error).message}`)
+    }
+
     // Nouveau lieu : on ouvre sa fiche. Modification : on revient à la fiche.
     if (idExistant) navigate(-1)
     else navigate(`/lieu/${id}`, { replace: true })
@@ -218,6 +254,11 @@ export default function AjouterLieu() {
     if (depenseId) {
       const { error } = await supabase.from('expenses').delete().eq('id', depenseId)
       if (error) return echec(error.message)
+    }
+    try {
+      await supprimerPhotos([...photosExistantes, ...photosRetirees])
+    } catch (e) {
+      return echec((e as Error).message)
     }
     const { error } = await supabase.from('places').delete().eq('id', id)
     if (error) return echec(error.message)
@@ -471,6 +512,44 @@ export default function AjouterLieu() {
               </div>
             </div>
 
+            {/* Photos (3 max) */}
+            <div>
+              <p className={styles.label}>
+                Photos <span className="font-normal">· {nbPhotos}/{MAX_PHOTOS}</span>
+              </p>
+              <div className="flex gap-3">
+                {photosExistantes.map((p) => (
+                  <Vignette
+                    key={p.id}
+                    url={p.url}
+                    onRetirer={() => {
+                      setPhotosExistantes((l) => l.filter((x) => x.id !== p.id))
+                      setPhotosRetirees((l) => [...l, p])
+                    }}
+                  />
+                ))}
+                {photosNouvelles.map((p) => (
+                  <Vignette key={p.id} url={p.apercu} onRetirer={() => setPhotosNouvelles((l) => l.filter((x) => x.id !== p.id))} />
+                ))}
+                {nbPhotos < MAX_PHOTOS && (
+                  <label className="flex h-[76px] w-[76px] shrink-0 cursor-pointer items-center justify-center rounded-[22px] border-2 border-dashed border-black/20 text-3xl text-texte-2">
+                    {preparation ? '…' : '+'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="sr-only"
+                      aria-label="Ajouter des photos"
+                      onChange={(e) => {
+                        ajouterPhotos(e.target.files)
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+
             {/* J'y retournerais */}
             <div className="flex items-center justify-between gap-2 rounded-[26px] bg-fond py-3 pl-4 pr-2">
               <p className="whitespace-nowrap font-semibold">J’y retournerais</p>
@@ -539,3 +618,23 @@ function versLocal(d: Date) {
 }
 
 const maintenantLocal = () => versLocal(new Date())
+
+function Vignette({ url, onRetirer }: { url: string | null; onRetirer: () => void }) {
+  return (
+    <div className="relative h-[76px] w-[76px] shrink-0">
+      {url ? (
+        <img src={url} alt="" className="h-full w-full rounded-[22px] object-cover" />
+      ) : (
+        <div className="h-full w-full rounded-[22px] bg-fond" />
+      )}
+      <button
+        type="button"
+        onClick={onRetirer}
+        aria-label="Retirer la photo"
+        className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-encre text-sm text-white ring-2 ring-white"
+      >
+        ✕
+      </button>
+    </div>
+  )
+}

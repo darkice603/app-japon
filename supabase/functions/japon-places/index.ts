@@ -9,6 +9,8 @@
 //   { action: "autocomplete", input, sessionToken?, lat?, lng? }
 //   { action: "details", placeId, sessionToken? }
 //   { action: "photo", name, maxWidth? }
+//   { action: "photosLieu", placeId }
+//   { action: "pexels", query }   (clé Pexels : secret JAPON_PEXELS_KEY)
 // =====================================================================
 
 const CLE = Deno.env.get('JAPON_GOOGLE_PLACES_KEY') ?? ''
@@ -101,6 +103,39 @@ Deno.serve(async (req) => {
           name: p.name,
           auteurs: (p.authorAttributions ?? []).map((a: any) => ({ nom: a.displayName, lien: a.uri })),
         })),
+      })
+    }
+
+    // 3 bis. Photos Google d'un lieu (redemandées à l'affichage, jamais stockées)
+    if (corps.action === 'photosLieu') {
+      const id = String(corps.placeId ?? '').replace(/[^A-Za-z0-9_-]/g, '')
+      if (!id) return reponse({ erreur: 'placeId manquant' }, 400)
+      const g = await google(`${GOOGLE}/places/${id}`, { champs: 'photos' })
+      return reponse({
+        photos: (g.photos ?? []).slice(0, 3).map((p: any) => ({
+          name: p.name,
+          auteurs: (p.authorAttributions ?? []).map((a: any) => ({ nom: a.displayName, lien: a.uri })),
+        })),
+      })
+    }
+
+    // 4. Photo Pexels (ville ou type de lieu) — secret JAPON_PEXELS_KEY
+    if (corps.action === 'pexels') {
+      const clePexels = Deno.env.get('JAPON_PEXELS_KEY') ?? ''
+      if (!clePexels) return reponse({ erreur: 'Clé Pexels absente (secret JAPON_PEXELS_KEY)' }, 500)
+      const requete = String(corps.query ?? '').slice(0, 80)
+      if (!requete.trim()) return reponse({ erreur: 'Recherche vide' }, 400)
+      const r = await fetch(
+        `https://api.pexels.com/v1/search?query=${encodeURIComponent(requete)}&per_page=5&orientation=landscape`,
+        { headers: { Authorization: clePexels } },
+      )
+      if (!r.ok) return reponse({ erreur: `Pexels ${r.status}` }, 502)
+      const p = await r.json()
+      const photo = p.photos?.[0]
+      return reponse({
+        photo: photo
+          ? { url: photo.src?.large, auteur: photo.photographer, lienAuteur: photo.photographer_url, lien: photo.url }
+          : null,
       })
     }
 

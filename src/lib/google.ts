@@ -50,3 +50,31 @@ export function categorieDepuisGoogle(types: string[]): { categorie: CategorieId
     return { categorie: 'shopping', type: 'konbini' }
   return { categorie: 'visiter', type: 'vue' }
 }
+
+export type PhotoGoogle = { name: string; auteurs: { nom: string; lien: string }[] }
+
+/** Photos Google d'un lieu (redemandées à chaque affichage, jamais stockées). */
+export const photosGoogle = (placeId: string) => appeler<{ photos: PhotoGoogle[] }>({ action: 'photosLieu', placeId }).then((r) => r.photos)
+
+/** Adresse temporaire d'une photo Google. */
+export const urlPhotoGoogle = (name: string, maxWidth = 1000) => appeler<{ url: string }>({ action: 'photo', name, maxWidth }).then((r) => r.url)
+
+export type PhotoPexels = { url: string; auteur: string; lienAuteur: string; lien: string }
+
+/** Photo Pexels pour une recherche (gardée en mémoire sur l'appareil pour économiser les requêtes). */
+export async function photoPexels(query: string): Promise<PhotoPexels | null> {
+  const cle = `pexels:${query.toLowerCase()}`
+  try {
+    const memo = localStorage.getItem(cle)
+    if (memo) return JSON.parse(memo)
+  } catch {
+    /* stockage indisponible */
+  }
+  const { photo } = await appeler<{ photo: PhotoPexels | null }>({ action: 'pexels', query })
+  try {
+    if (photo) localStorage.setItem(cle, JSON.stringify(photo))
+  } catch {
+    /* stockage indisponible */
+  }
+  return photo
+}

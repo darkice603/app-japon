@@ -3,12 +3,13 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { categorie, typeDe } from '../lib/categories'
 import { ecartJours, formatYen } from '../lib/dates'
-import Couverture from '../components/Couverture'
+import ImageLieu from '../components/ImageLieu'
 
 type LieuComplet = {
   id: string
   name: string
   name_ja: string | null
+  google_place_id: string | null
   category: string
   type: string | null
   visited_at: string | null
@@ -37,7 +38,7 @@ export default function FicheLieu() {
     supabase
       .from('places')
       .select(
-        'id, name, name_ja, category, type, visited_at, rating, would_return, note, stops(city, trip_id, trips(start_date)), place_items(id, label, price_jpy, position), expenses(amount_jpy, amount_eur)',
+        'id, name, name_ja, google_place_id, category, type, visited_at, rating, would_return, note, stops(city, trip_id, trips(start_date)), place_items(id, label, price_jpy, position), expenses(amount_jpy, amount_eur)',
       )
       .eq('id', id!)
       .maybeSingle()
@@ -67,7 +68,17 @@ export default function FicheLieu() {
     <main className="mx-auto max-w-md pb-[max(env(safe-area-inset-bottom),24px)]">
       {/* Couverture */}
       <div className="relative">
-        <Couverture categorieId={lieu.category} typeId={lieu.type} className="h-[330px] rounded-b-[34px]" />
+        <ImageLieu
+          lieu={{ id: lieu.id, google_place_id: lieu.google_place_id, category: lieu.category, type: lieu.type, ville: lieu.stops?.city ?? null }}
+          className="h-[330px] rounded-b-[34px]"
+        />
+        <Link
+          to={`/lieu/${lieu.id}/modifier`}
+          className="absolute right-5 top-[max(env(safe-area-inset-top),20px)] flex min-h-12 items-center gap-2 rounded-full bg-carte px-5 font-bold"
+        >
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>
+          Ajouter une photo
+        </Link>
         <button
           onClick={() => (window.history.length > 1 ? navigate(-1) : navigate(`/voyage/${lieu.stops?.trip_id ?? ''}`))}
           aria-label="Retour"
