@@ -1,6 +1,8 @@
 import { Route, Routes, useLocation } from 'react-router-dom'
 import NavFlottante from './components/NavFlottante'
-import EcranVide from './screens/EcranVide'
+import { Link } from 'react-router-dom'
+import Restos from './screens/Restos'
+import Prefectures from './screens/Prefectures'
 import Connexion from './screens/Connexion'
 import Prenom from './screens/Prenom'
 import MesVoyages from './screens/MesVoyages'
@@ -13,11 +15,6 @@ import BudgetEcran from './screens/Budget'
 import Ville from './screens/Ville'
 import { useAuth } from './lib/auth'
 import { useProfil } from './lib/profil'
-
-const ecrans = [
-  { path: '/restos', code: 'B6', titre: 'Mes restos' },
-  { path: '/prefectures', code: 'B9', titre: 'Préfectures' },
-]
 
 export default function App() {
   const { session, chargement } = useAuth()
@@ -42,13 +39,12 @@ export default function App() {
         <Route path="/chercher" element={<Chercher />} />
         <Route path="/budget" element={<BudgetEcran />} />
         <Route path="/ville/:id" element={<Ville />} />
-        {ecrans.map((e) => (
-          <Route key={e.path} path={e.path} element={<EcranVide code={e.code} titre={e.titre} />} />
-        ))}
-        <Route path="*" element={<EcranVide code="404" titre="Page introuvable" />} />
+        <Route path="/restos" element={<Restos />} />
+        <Route path="/prefectures" element={<Prefectures />} />
+        <Route path="*" element={<Introuvable />} />
       </Routes>
       {/* Pas de navigation sur la fiche lieu ni sur B4 (comme sur les maquettes) */}
-      {!/^\/(lieu|ajouter|chercher)/.test(pathname) && <NavFlottante />}
+      {!/^\/(lieu|ajouter|chercher|prefectures)/.test(pathname) && <NavFlottante />}
     </>
   )
 }
@@ -71,6 +67,18 @@ function ErreurProfil({ message }: { message: string }) {
           {tableManquante ? 'La table « profils » n’existe pas encore : lance le script 002_profils.sql dans Supabase.' : message}
         </p>
       </div>
+    </main>
+  )
+}
+
+function Introuvable() {
+  return (
+    <main className="mx-auto flex min-h-svh max-w-md flex-col items-center justify-center px-5 text-center">
+      <p className="font-kanji text-5xl text-texte-2/40">迷</p>
+      <h1 className="mt-3 font-titre text-3xl">Page introuvable</h1>
+      <Link to="/" className="mt-6 flex min-h-14 items-center rounded-full bg-encre px-8 font-bold text-white">
+        Retour à mes voyages
+      </Link>
     </main>
   )
 }

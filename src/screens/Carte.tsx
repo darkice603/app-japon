@@ -32,7 +32,7 @@ export default function Carte() {
   const [carteChargee, setCarteChargee] = useState(false)
   const [lieux, setLieux] = useState<LieuPlace[] | null>(null)
   const [sansPosition, setSansPosition] = useState(0)
-  const [filtre, setFiltre] = useState<CategorieId | null>(null)
+  const [filtre, setFiltre] = useState<CategorieId | null>(() => (params.get('filtre') as CategorieId | null) ?? null)
   const [jour, setJour] = useState<string | null>(null)
   const [erreur, setErreur] = useState<string | null>(null)
   // Panneau « Ta journée » replié : il se replie aussi tout seul dès qu'on bouge la carte avec les doigts
