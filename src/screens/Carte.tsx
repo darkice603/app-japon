@@ -35,6 +35,8 @@ export default function Carte() {
   const [filtre, setFiltre] = useState<CategorieId | null>(null)
   const [jour, setJour] = useState<string | null>(null)
   const [erreur, setErreur] = useState<string | null>(null)
+  // Panneau « Ta journée » replié : il se replie aussi tout seul dès qu'on bouge la carte avec les doigts
+  const [replie, setReplie] = useState(false)
 
   // Données
   useEffect(() => {
@@ -62,6 +64,10 @@ export default function Carte() {
   useEffect(() => {
     if (!conteneur.current) return
     const c = creerCarte(conteneur.current)
+    // Seulement les gestes de l'utilisateur (pas les cadrages automatiques)
+    const replier = (e: { originalEvent?: unknown }) => e.originalEvent && setReplie(true)
+    c.on('dragstart', replier)
+    c.on('zoomstart', replier)
     c.on('load', () => {
       c.addSource('trajet', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       c.addLayer({
@@ -149,7 +155,25 @@ export default function Carte() {
       </div>
 
       {/* Ta journée */}
-      <section className="absolute inset-x-3 bottom-[calc(max(env(safe-area-inset-bottom),16px)+76px)] mx-auto max-w-md rounded-[30px] bg-carte p-5 shadow-[0_-4px_30px_rgba(0,0,0,0.08)]">
+      {replie ? (
+        <button
+          onClick={() => setReplie(false)}
+          className="absolute inset-x-3 bottom-[calc(max(env(safe-area-inset-bottom),16px)+76px)] mx-auto flex min-h-14 max-w-md items-center justify-between gap-3 rounded-full bg-carte px-5 shadow-[0_-4px_30px_rgba(0,0,0,0.10)]"
+          aria-label="Afficher le panneau de la journée"
+        >
+          <span className="truncate font-semibold">
+            {jour ? `Ta journée · ${duJour.length} lieu${duJour.length > 1 ? 'x' : ''}` : 'Mes lieux'}
+          </span>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M6 15l6-6 6 6" />
+          </svg>
+        </button>
+      ) : (
+      <section className="absolute inset-x-3 bottom-[calc(max(env(safe-area-inset-bottom),16px)+76px)] mx-auto max-w-md rounded-[30px] bg-carte p-5 pt-2 shadow-[0_-4px_30px_rgba(0,0,0,0.08)]">
+        {/* Poignée : touche pour replier */}
+        <button onClick={() => setReplie(true)} aria-label="Replier le panneau" className="-mx-5 mb-2 flex h-6 w-[calc(100%+40px)] items-center justify-center">
+          <span className="h-1.5 w-10 rounded-full bg-black/15" />
+        </button>
         {erreur && <p className="text-sm font-semibold text-manger-fonce">{erreur}</p>}
         {lieux && lieux.length === 0 && (
           <div>
@@ -161,14 +185,15 @@ export default function Carte() {
             </p>
           </div>
         )}
-        {jour && <Journee jour={jour} lieux={duJour} index={indexJour} total={jours.length} onJour={(i) => setJour(jours[i])} />}
+        {jour && <Journee jour={jour} lieux={duJour} index={indexJour} total={jours.length} onJour={(i) => setJour(jours[i])} onReplier={() => setReplie(true)} />}
         {!jour && lieux && lieux.length > 0 && <p className="text-sm text-texte-2">Ces lieux n’ont pas de date de visite.</p>}
       </section>
+      )}
     </main>
   )
 }
 
-function Journee({ jour, lieux, index, total, onJour }: { jour: string; lieux: LieuPlace[]; index: number; total: number; onJour: (i: number) => void }) {
+function Journee({ jour, lieux, index, total, onJour, onReplier }: { jour: string; lieux: LieuPlace[]; index: number; total: number; onJour: (i: number) => void; onReplier: () => void }) {
   const villes = lieux.map((l) => l.stops?.city).filter(Boolean) as string[]
   const ville = villes.sort((a, b) => villes.filter((v) => v === b).length - villes.filter((v) => v === a).length)[0]
   const debut = lieux[0]?.stops?.trips?.start_date
@@ -176,7 +201,7 @@ function Journee({ jour, lieux, index, total, onJour }: { jour: string; lieux: L
   const date = new Date(jour + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' })
   const yens = lieux.reduce((s, l) => s + l.expenses.reduce((t, e) => t + e.amount_jpy, 0), 0)
   const euros = lieux.reduce((s, l) => s + l.expenses.reduce((t, e) => t + (e.amount_eur ?? 0), 0), 0)
-  const fleche = 'flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-fond text-xl disabled:opacity-30'
+  const fleche = 'flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-fond text-xl disabled:opacity-30'
 
   return (
     <div>
@@ -188,12 +213,17 @@ function Journee({ jour, lieux, index, total, onJour }: { jour: string; lieux: L
           </p>
           <h2 className="font-titre text-[26px] leading-tight">Ta journée à {ville}</h2>
         </div>
-        <div className="flex gap-1">
+        <div className="flex shrink-0 gap-1">
           <button className={fleche} disabled={index <= 0} onClick={() => onJour(index - 1)} aria-label="Jour précédent">
             ‹
           </button>
           <button className={fleche} disabled={index >= total - 1} onClick={() => onJour(index + 1)} aria-label="Jour suivant">
             ›
+          </button>
+          <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-encre text-white" onClick={onReplier} aria-label="Replier le panneau">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
           </button>
         </div>
       </div>
