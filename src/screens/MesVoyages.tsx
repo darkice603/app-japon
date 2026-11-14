@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useProfil } from '../lib/profil'
+import FeuilleVoyage, { type VoyageAEditer } from '../components/FeuilleVoyage'
 import { aujourdhui, ecartJours, formatEuro, formatYen, moisAnnee } from '../lib/dates'
 
 type Voyage = {
@@ -30,8 +31,9 @@ export default function MesVoyages() {
   const [donnees, setDonnees] = useState<Donnees | null>(null)
   const [erreur, setErreur] = useState<string | null>(null)
   const [menu, setMenu] = useState(false)
+  const [feuille, setFeuille] = useState<VoyageAEditer | 'nouveau' | null>(null)
 
-  useEffect(() => {
+  const charger = useCallback(() => {
     Promise.all([
       supabase
         .from('trips')
@@ -41,19 +43,24 @@ export default function MesVoyages() {
     ]).then(([voyages, lieux]) => {
       const err = voyages.error ?? lieux.error
       if (err) return setErreur(err.message)
+      setErreur(null)
       setDonnees({ voyages: (voyages.data ?? []) as Voyage[], lieuxNotes: lieux.count ?? 0 })
     })
   }, [])
 
+  useEffect(charger, [charger])
+
   const jour = aujourdhui()
   const voyages = donnees?.voyages ?? []
   const enCours = voyages.find((v) => v.start_date && v.start_date <= jour && (!v.end_date || v.end_date >= jour))
-  const aVenir = voyages
+  const futurs = voyages
     .filter((v) => v.start_date && v.start_date > jour)
-    .sort((a, b) => a.start_date!.localeCompare(b.start_date!))[0]
-  const passes = voyages.filter((v) => v !== enCours && v !== aVenir && !(v.start_date && v.start_date > jour))
+    .sort((a, b) => a.start_date!.localeCompare(b.start_date!))
+  // Mis en avant : le voyage en cours, sinon le prochain.
+  const vedette = enCours ?? futurs[0]
+  const aVenir = futurs.filter((v) => v !== vedette)
+  const passes = voyages.filter((v) => v !== enCours && !futurs.includes(v))
   const prefectures = new Set(voyages.flatMap((v) => v.stops.map((s) => s.prefecture_code)).filter(Boolean)).size
-  const vedette = enCours ?? aVenir
 
   return (
     <main className="mx-auto max-w-md px-5 pt-[max(env(safe-area-inset-top),40px)] pb-36">
@@ -84,7 +91,7 @@ export default function MesVoyages() {
       {erreur && <p className="mt-6 rounded-carte bg-manger-clair p-4 text-sm font-semibold text-manger-fonce">{erreur}</p>}
 
       {/* Voyage en cours (ou prochain voyage) */}
-      {vedette && <CarteVedette voyage={vedette} enCours={vedette === enCours} jour={jour} />}
+      {vedette && <CarteVedette voyage={vedette} enCours={vedette === enCours} jour={jour} onOuvrir={() => setFeuille(vedette)} />}
 
       {/* Compteurs */}
       <section className="mt-3 grid grid-cols-3 gap-3">
@@ -105,32 +112,68 @@ export default function MesVoyages() {
         </div>
       </section>
 
-      {/* Voyages passés */}
       {donnees && voyages.length === 0 && (
         <section className="mt-8 rounded-carte bg-carte p-6 text-center">
           <p className="font-kanji text-4xl text-texte-2">旅</p>
           <p className="mt-2 font-titre text-xl">Aucun voyage pour l'instant</p>
-          <p className="mt-1 text-sm text-texte-2">La création d'un voyage arrive au prochain morceau.</p>
+          <p className="mt-1 text-sm text-texte-2">Commence par créer ton premier voyage.</p>
+          <button onClick={() => setFeuille('nouveau')} className="mt-5 min-h-14 w-full rounded-full bg-encre text-lg font-bold text-white">
+            Nouveau voyage
+          </button>
         </section>
       )}
 
+      {voyages.length > 0 && (
+        <button
+          onClick={() => setFeuille('nouveau')}
+          className="mt-3 flex min-h-14 w-full items-center justify-center gap-2 rounded-[22px] border-2 border-dashed border-black/15 font-semibold text-texte-2"
+        >
+          <span className="text-xl leading-none">+</span> Nouveau voyage
+        </button>
+      )}
+
+      {aVenir.length > 0 && (
+        <Rangee titre="À venir">
+          {aVenir.map((v, i) => (
+            <CarteVoyage key={v.id} voyage={v} couleur={couvertures[(i + 2) % couvertures.length]} onOuvrir={() => setFeuille(v)} />
+          ))}
+        </Rangee>
+      )}
+
       {passes.length > 0 && (
-        <section className="mt-8">
-          <h2 className="font-titre text-2xl">Voyages passés</h2>
-          <div className="-mx-5 mt-3 flex snap-x gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none]">
-            {passes.map((v, i) => (
-              <CartePassee key={v.id} voyage={v} couleur={couvertures[i % couvertures.length]} />
-            ))}
-          </div>
-        </section>
+        <Rangee titre="Voyages passés">
+          {passes.map((v, i) => (
+            <CarteVoyage key={v.id} voyage={v} couleur={couvertures[i % couvertures.length]} onOuvrir={() => setFeuille(v)} />
+          ))}
+        </Rangee>
+      )}
+
+      {feuille && (
+        <FeuilleVoyage
+          voyage={feuille === 'nouveau' ? null : feuille}
+          onFermer={() => setFeuille(null)}
+          onEnregistre={() => {
+            setFeuille(null)
+            charger()
+          }}
+        />
       )}
     </main>
   )
 }
 
-function CarteVedette({ voyage, enCours, jour }: { voyage: Voyage; enCours: boolean; jour: string }) {
+function Rangee({ titre, children }: { titre: string; children: ReactNode }) {
+  return (
+    <section className="mt-8">
+      <h2 className="font-titre text-2xl">{titre}</h2>
+      <div className="-mx-5 mt-3 flex snap-x gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none]">{children}</div>
+    </section>
+  )
+}
+
+function CarteVedette({ voyage, enCours, jour, onOuvrir }: { voyage: Voyage; enCours: boolean; jour: string; onOuvrir: () => void }) {
   const villes = [...voyage.stops]
-    .sort((a, b) => (a.arrival_date ?? '').localeCompare(b.arrival_date ?? ''))
+    .sort((a, b) => (a.arrival_date ?? '9999').localeCompare(b.arrival_date ?? '9999'))
     .map((s) => s.city)
   const totalJours = voyage.start_date && voyage.end_date ? ecartJours(voyage.start_date, voyage.end_date) + 1 : null
   const numeroJour = voyage.start_date ? ecartJours(voyage.start_date, jour) + 1 : null
@@ -138,7 +181,7 @@ function CarteVedette({ voyage, enCours, jour }: { voyage: Voyage; enCours: bool
   const depense = voyage.expenses.reduce((s, e) => s + e.amount_jpy, 0)
 
   return (
-    <section className="mt-6 flex gap-3 rounded-[30px] bg-carte p-4 pl-5">
+    <button onClick={onOuvrir} className="mt-6 flex w-full gap-3 rounded-[30px] bg-carte p-4 pl-5 text-left">
       <div className="min-w-0 flex-1 py-1">
         <p className="text-sm font-medium text-texte-2">{enCours ? 'En cours' : 'Prochain voyage'}</p>
         <h2 className="mt-1 truncate font-titre text-[28px] leading-tight">{voyage.name}</h2>
@@ -155,7 +198,7 @@ function CarteVedette({ voyage, enCours, jour }: { voyage: Voyage; enCours: bool
         {villes.length > 0 && <p className="mt-3 text-sm text-texte-2">{villes.join(' → ')}</p>}
       </div>
       <MiniCarte etapes={villes.length} />
-    </section>
+    </button>
   )
 }
 
@@ -175,18 +218,19 @@ function MiniCarte({ etapes }: { etapes: number }) {
   )
 }
 
-function CartePassee({ voyage, couleur }: { voyage: Voyage; couleur: { fond: string; bas: string } }) {
+function CarteVoyage({ voyage, couleur, onOuvrir }: { voyage: Voyage; couleur: { fond: string; bas: string }; onOuvrir: () => void }) {
   const euros = voyage.expenses.reduce((s, e) => s + (e.amount_eur ?? 0), 0)
   const details = [voyage.start_date && moisAnnee(voyage.start_date), euros > 0 && formatEuro(euros)].filter(Boolean)
   return (
-    <article
-      className="relative flex h-60 w-[200px] shrink-0 snap-start flex-col justify-end overflow-hidden rounded-[30px] p-2.5"
+    <button
+      onClick={onOuvrir}
+      className="relative flex h-60 w-[200px] shrink-0 snap-start flex-col justify-end overflow-hidden rounded-[30px] p-2.5 text-left"
       style={{ background: `linear-gradient(${couleur.fond} 0 66%, ${couleur.bas} 66%)` }}
     >
-      <div className="rounded-[20px] bg-black/40 px-3 py-2.5 text-white backdrop-blur-sm">
+      <div className="w-full rounded-[20px] bg-black/40 px-3 py-2.5 text-white backdrop-blur-sm">
         <h3 className="truncate font-titre text-lg leading-tight">{voyage.name}</h3>
         {details.length > 0 && <p className="text-sm">{details.join(' · ')}</p>}
       </div>
-    </article>
+    </button>
   )
 }
