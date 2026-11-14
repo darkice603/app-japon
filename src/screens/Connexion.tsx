@@ -34,9 +34,9 @@ export default function Connexion() {
 
   return (
     <main className="mx-auto flex min-h-svh max-w-md flex-col justify-center px-5 py-10">
-      <p className="font-kanji text-5xl">旅</p>
-      <h1 className="mt-3 font-titre text-4xl leading-tight">Mes voyages</h1>
-      <p className="mt-1 text-texte-2">Connecte-toi avec le code reçu par e-mail.</p>
+      <img src="/icon.svg" alt="" className="h-20 w-20 rounded-[22px] bg-carte shadow-sm ring-1 ring-black/10" />
+      <h1 className="mt-4 font-titre text-5xl leading-none tracking-tight">Tabi</h1>
+      <p className="mt-2 text-texte-2">Ton carnet de voyage au Japon. Connecte-toi avec le code reçu par e-mail.</p>
 
       <div className="mt-6 rounded-carte bg-carte p-5 shadow-sm">
         {!supabaseConfigure ? (

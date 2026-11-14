@@ -1,4 +1,4 @@
-# App voyage — brief projet
+# Tabi (旅) — app de voyage au Japon — brief projet
 
 App perso (PWA installable sur iPhone) pour garder une trace de mes voyages, surtout au Japon : villes visitées, hôtels, restos, cafés, activités, avec **notes sur 10**, **prix payés** (en yens + conversion en euros) et photos.
 
@@ -56,6 +56,7 @@ Je suis designer UX/UI, pas développeur : explique simplement ce que tu fais, a
 - Étape 5 faite : Edge Function **`japon-places`** (secret `JAPON_GOOGLE_PLACES_KEY`, clé restreinte à Places API (New), JWT vérifié) : `autocomplete` (Japon, fr, biais sur la ville de l'étape, session token), `details` (fr + nom ja), `photo` (URL temporaire). B3 → préremplit B4 (nom, nom japonais, catégorie/type déduits des types Google, position). **Décision 14/11/2026** : on garde aussi le **nom et la position** choisis (données de l'utilisateur, modifiables) en plus du `place_id` ; adresse et photos Google redemandées à l'affichage. À revoir si commercialisation. « Autour de moi » et « Ouvert » de la maquette B3 non faits.
 - Étapes 6–8 faites : photos (compression JPEG, EXIF, bucket privé, URLs signées), image du lieu mes photos → Google → Unsplash → couverture ; B8 Budget (¥/€, catégories, jours, budget prévu voyage/global, dépenses hors lieu) ; B7 Ville ; B6 Mes restos (manger + café + konbini notés, podium, filtres voyage/Japon/type) ; B9 Préfectures (visitée = une étape dans la préfecture, régions en tuiles, envies ★ par préfecture). Écran vide provisoire supprimé.
 - Étape 9 faite : hors ligne = lecture (service worker : app, données NetworkFirst, tuiles, polices) + **ajout** de lieux/dépenses en file d'attente IndexedDB (`src/lib/attente.ts`), envoyés au retour du réseau ; modifier/supprimer en ligne seulement. Écrans en chargement différé. Dépôt **privé** GitHub `darkice603/app-japon` (branche `main`), déployé sur Vercel : **https://app-japon-m64d.vercel.app** (variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`) ; chaque push sur `main` redéploie.
+- **Nom et logo (14/11/2026)** : « Tabi » (旅 = voyage). Logo : kanji 旅 encre (tracé vectoriel tiré de Zen Maru Gothic) sur fond crème + point orange, `public/icon.svg` ; icônes régénérées par `npx pwa-assets-generator` (`pwa-assets.config.ts`).
 - Comptes existants : GitHub, Supabase, Vercel. Créés : Google Cloud (étape 5), Unsplash (étape 6).
 - Navigation flottante (B1) : Voyages · Carte · [+] · Restos · Budget ; onglet actif = pilule noire icône + libellé. Préfectures (B9) s'ouvre depuis la carte « 23/47 » de B1.
 

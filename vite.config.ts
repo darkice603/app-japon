@@ -13,8 +13,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'apple-touch-icon-180x180.png'],
       manifest: {
-        name: 'Mes voyages',
-        short_name: 'Voyages',
+        name: 'Tabi · carnet de voyage au Japon',
+        short_name: 'Tabi',
+        description: 'Ton carnet de voyage au Japon : lieux, notes, prix et carte.',
         lang: 'fr',
         start_url: '/',
         display: 'standalone',
