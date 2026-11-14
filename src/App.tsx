@@ -4,13 +4,13 @@ import EcranVide from './screens/EcranVide'
 import Connexion from './screens/Connexion'
 import Prenom from './screens/Prenom'
 import MesVoyages from './screens/MesVoyages'
+import AjouterLieu from './screens/AjouterLieu'
 import { useAuth } from './lib/auth'
 import { useProfil } from './lib/profil'
 
 const ecrans = [
   { path: '/carte', code: 'B2', titre: 'Carte' },
   { path: '/chercher', code: 'B3', titre: 'Chercher un lieu' },
-  { path: '/ajouter', code: 'B4', titre: 'Ajouter un lieu' },
   { path: '/lieu/:id', code: 'B5', titre: 'Fiche lieu' },
   { path: '/restos', code: 'B6', titre: 'Mes restos' },
   { path: '/ville/:id', code: 'B7', titre: 'Ville' },
@@ -32,6 +32,8 @@ export default function App() {
     <>
       <Routes>
         <Route path="/" element={<MesVoyages />} />
+        <Route path="/ajouter" element={<AjouterLieu />} />
+        <Route path="/lieu/:id/modifier" element={<AjouterLieu />} />
         {ecrans.map((e) => (
           <Route key={e.path} path={e.path} element={<EcranVide code={e.code} titre={e.titre} />} />
         ))}

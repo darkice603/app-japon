@@ -42,7 +42,7 @@ export default function FeuilleVoyage({
     if (!voyage) return
     supabase
       .from('stops')
-      .select('id, city, prefecture_code, arrival_date, departure_date')
+      .select('id, city, name_ja, lat, lng, prefecture_code, arrival_date, departure_date')
       .eq('trip_id', voyage.id)
       .then(({ data, error }) => {
         if (error) return setErreur(error.message)
@@ -168,7 +168,7 @@ export default function FeuilleVoyage({
           {erreur && <p className="rounded-[18px] bg-manger-clair p-3 text-sm font-semibold text-manger-fonce">{erreur}</p>}
 
           <div className="space-y-2">
-            <button type="submit" disabled={enCours || !nom.trim()} className={styles.boutonPrincipal}>
+            <button type="submit" disabled={enCours} className={styles.boutonPrincipal}>
               {enCours ? 'Enregistrement…' : 'Enregistrer'}
             </button>
             {voyage && (
