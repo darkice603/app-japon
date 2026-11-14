@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useProfil } from '../lib/profil'
-import FeuilleVoyage, { type VoyageAEditer } from '../components/FeuilleVoyage'
+import FeuilleVoyage from '../components/FeuilleVoyage'
 import { aujourdhui, ecartJours, formatEuro, formatYen, moisAnnee } from '../lib/dates'
 
 type Voyage = {
@@ -28,10 +28,11 @@ const couvertures = [
 /** B1 · Mes voyages */
 export default function MesVoyages() {
   const { prenom } = useProfil()
+  const navigate = useNavigate()
   const [donnees, setDonnees] = useState<Donnees | null>(null)
   const [erreur, setErreur] = useState<string | null>(null)
   const [menu, setMenu] = useState(false)
-  const [feuille, setFeuille] = useState<VoyageAEditer | 'nouveau' | null>(null)
+  const [feuille, setFeuille] = useState<'nouveau' | null>(null)
 
   const charger = useCallback(() => {
     Promise.all([
@@ -91,7 +92,7 @@ export default function MesVoyages() {
       {erreur && <p className="mt-6 rounded-carte bg-manger-clair p-4 text-sm font-semibold text-manger-fonce">{erreur}</p>}
 
       {/* Voyage en cours (ou prochain voyage) */}
-      {vedette && <CarteVedette voyage={vedette} enCours={vedette === enCours} jour={jour} onOuvrir={() => setFeuille(vedette)} />}
+      {vedette && <CarteVedette voyage={vedette} enCours={vedette === enCours} jour={jour} onOuvrir={() => navigate(`/voyage/${vedette.id}`)} />}
 
       {/* Compteurs */}
       <section className="mt-3 grid grid-cols-3 gap-3">
@@ -135,7 +136,7 @@ export default function MesVoyages() {
       {aVenir.length > 0 && (
         <Rangee titre="À venir">
           {aVenir.map((v, i) => (
-            <CarteVoyage key={v.id} voyage={v} couleur={couvertures[(i + 2) % couvertures.length]} onOuvrir={() => setFeuille(v)} />
+            <CarteVoyage key={v.id} voyage={v} couleur={couvertures[(i + 2) % couvertures.length]} onOuvrir={() => navigate(`/voyage/${v.id}`)} />
           ))}
         </Rangee>
       )}
@@ -143,14 +144,14 @@ export default function MesVoyages() {
       {passes.length > 0 && (
         <Rangee titre="Voyages passés">
           {passes.map((v, i) => (
-            <CarteVoyage key={v.id} voyage={v} couleur={couvertures[i % couvertures.length]} onOuvrir={() => setFeuille(v)} />
+            <CarteVoyage key={v.id} voyage={v} couleur={couvertures[i % couvertures.length]} onOuvrir={() => navigate(`/voyage/${v.id}`)} />
           ))}
         </Rangee>
       )}
 
       {feuille && (
         <FeuilleVoyage
-          voyage={feuille === 'nouveau' ? null : feuille}
+          voyage={null}
           onFermer={() => setFeuille(null)}
           onEnregistre={() => {
             setFeuille(null)

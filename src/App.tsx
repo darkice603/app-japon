@@ -1,17 +1,18 @@
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, useLocation } from 'react-router-dom'
 import NavFlottante from './components/NavFlottante'
 import EcranVide from './screens/EcranVide'
 import Connexion from './screens/Connexion'
 import Prenom from './screens/Prenom'
 import MesVoyages from './screens/MesVoyages'
 import AjouterLieu from './screens/AjouterLieu'
+import FicheLieu from './screens/FicheLieu'
+import Voyage from './screens/Voyage'
 import { useAuth } from './lib/auth'
 import { useProfil } from './lib/profil'
 
 const ecrans = [
   { path: '/carte', code: 'B2', titre: 'Carte' },
   { path: '/chercher', code: 'B3', titre: 'Chercher un lieu' },
-  { path: '/lieu/:id', code: 'B5', titre: 'Fiche lieu' },
   { path: '/restos', code: 'B6', titre: 'Mes restos' },
   { path: '/ville/:id', code: 'B7', titre: 'Ville' },
   { path: '/budget', code: 'B8', titre: 'Budget' },
@@ -21,6 +22,7 @@ const ecrans = [
 export default function App() {
   const { session, chargement } = useAuth()
   const profil = useProfil()
+  const { pathname } = useLocation()
 
   if (chargement) return <Attente />
   if (!session) return <Connexion />
@@ -34,12 +36,15 @@ export default function App() {
         <Route path="/" element={<MesVoyages />} />
         <Route path="/ajouter" element={<AjouterLieu />} />
         <Route path="/lieu/:id/modifier" element={<AjouterLieu />} />
+        <Route path="/lieu/:id" element={<FicheLieu />} />
+        <Route path="/voyage/:id" element={<Voyage />} />
         {ecrans.map((e) => (
           <Route key={e.path} path={e.path} element={<EcranVide code={e.code} titre={e.titre} />} />
         ))}
         <Route path="*" element={<EcranVide code="404" titre="Page introuvable" />} />
       </Routes>
-      <NavFlottante />
+      {/* Pas de navigation sur la fiche lieu ni sur B4 (comme sur les maquettes) */}
+      {!/^\/(lieu|ajouter)/.test(pathname) && <NavFlottante />}
     </>
   )
 }

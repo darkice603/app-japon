@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 
 const icones: Record<string, ReactNode> = {
   voyages: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z" /></>,
@@ -26,6 +26,9 @@ const onglets = [
 
 /** Navigation flottante (B1) : pilule blanche, onglet actif noir avec libellé, bouton + orange. */
 export default function NavFlottante() {
+  const { pathname } = useLocation()
+  // L'onglet Voyages reste actif sur la page d'un voyage
+  const actif = (isActive: boolean, to: string) => isActive || (to === '/' && pathname.startsWith('/voyage/'))
   return (
     <nav aria-label="Navigation principale" className="fixed inset-x-0 bottom-[max(env(safe-area-inset-bottom),16px)] z-50 flex justify-center px-4">
       <div className="flex items-center gap-1 rounded-full bg-carte p-2 shadow-[0_10px_40px_rgba(0,0,0,0.10)]">
@@ -42,14 +45,14 @@ export default function NavFlottante() {
               aria-label={o.label}
               className={({ isActive }) =>
                 `flex h-12 items-center justify-center gap-2 rounded-full transition-all ${
-                  isActive ? 'bg-encre px-5 text-white' : 'w-12 text-encre/70'
+                  actif(isActive, o.to) ? 'bg-encre px-5 text-white' : 'w-12 text-encre/70'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
                   <Icone nom={o.nom} />
-                  {isActive && <span className="text-[15px] font-bold">{o.label}</span>}
+                  {actif(isActive, o.to) && <span className="text-[15px] font-bold">{o.label}</span>}
                 </>
               )}
             </NavLink>

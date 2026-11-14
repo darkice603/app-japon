@@ -186,7 +186,22 @@ export default function AjouterLieu() {
       if (error) return echec(error.message)
     }
 
-    navigate('/', { replace: true })
+    // Nouveau lieu : on ouvre sa fiche. Modification : on revient à la fiche.
+    if (idExistant) navigate(-1)
+    else navigate(`/lieu/${id}`, { replace: true })
+  }
+
+  async function supprimer() {
+    if (!window.confirm(`Supprimer « ${nom} » et sa dépense ? C'est définitif.`)) return
+    setEnCours(true)
+    if (depenseId) {
+      const { error } = await supabase.from('expenses').delete().eq('id', depenseId)
+      if (error) return echec(error.message)
+    }
+    const { error } = await supabase.from('places').delete().eq('id', id)
+    if (error) return echec(error.message)
+    const tripId = etapes?.find((et) => et.id === etapeId)?.trip_id
+    navigate(tripId ? `/voyage/${tripId}` : '/', { replace: true })
   }
 
   function echec(message: string) {
@@ -447,9 +462,16 @@ export default function AjouterLieu() {
 
             {erreur && <p className="rounded-[18px] bg-manger-clair p-3 text-sm font-semibold text-manger-fonce">{erreur}</p>}
 
-            <button type="submit" disabled={enCours} className={styles.boutonPrincipal}>
-              {enCours ? 'Enregistrement…' : 'Enregistrer'}
-            </button>
+            <div className="space-y-2">
+              <button type="submit" disabled={enCours} className={styles.boutonPrincipal}>
+                {enCours ? 'Enregistrement…' : 'Enregistrer'}
+              </button>
+              {idExistant && (
+                <button type="button" onClick={supprimer} disabled={enCours} className={styles.boutonDiscret}>
+                  Supprimer ce lieu
+                </button>
+              )}
+            </div>
           </form>
         )}
       </Feuille>
