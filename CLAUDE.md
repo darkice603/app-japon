@@ -41,7 +41,7 @@ Je suis designer UX/UI, pas développeur : explique simplement ce que tu fais, a
 - Plusieurs utilisateurs possibles (chacun ses voyages, rien de partagé) ; commercialisation éventuelle plus tard, pas prioritaire.
 - **Japon uniquement**, tout en yens → euros.
 - Noms de lieux en français, sinon en rōmaji (+ nom japonais).
-- **Retirés** : « Partager ma carte » (B8), pas / km / « ma position » (pas de géolocalisation). B3 « Autour de moi » devient « autour de la ville de l'étape ».
+- **Retirés** : « Partager ma carte » (B9), pas / km / « ma position » (pas de géolocalisation). B3 « Autour de moi » devient « autour de la ville de l'étape ».
 - **Envies** : table `envies` (préfecture, ville ou lieu que je veux faire), alimentée depuis B9 « Il te manque ».
 - Le prix payé saisi sur un lieu **crée automatiquement une dépense** (pas de double saisie).
 - Budget prévu **par voyage** + budget **global**.
@@ -49,12 +49,13 @@ Je suis designer UX/UI, pas développeur : explique simplement ce que tu fais, a
 - **Hors ligne façon Polarsteps** : ajout possible sans réseau, synchro au retour (identifiants générés côté app dès l'étape 3, synchro à l'étape 9).
 - Photos : 3 max par lieu. Anciens voyages ressaisis à la main.
 - Comptes existants : GitHub, Supabase, Vercel. À créer : Google Cloud (carte bancaire + quotas, étape 5), Pexels (étape 6).
-- Navigation flottante : Voyages · Carte · [+] · Budget · Préfectures (à ajuster selon les maquettes).
+- Navigation flottante (B1) : Voyages · Carte · [+] · Restos · Budget ; onglet actif = pilule noire icône + libellé. Préfectures (B9) s'ouvre depuis la carte « 23/47 » de B1.
 
 ## Méthode de travail (économie de contexte)
 
 - Une **nouvelle session Claude par étape** ; ce fichier suffit pour repartir.
-- Pas de sous-agents. Lire uniquement la capture de l'écran en cours dans `design/` (B1.png…B10.png).
+- Pas de sous-agents. Lire uniquement la capture de l'écran en cours dans `design/` (B1-voyages.png … B10-identite.png ; B5 existe en version photo et sans photo).
+- Sur B2/B3, ignorer ce qui a été retiré (km, ma position, « Autour de moi »), et sur B9 le bouton « Partager ma carte ».
 
 ## Design — direction « B · La carte d'abord »
 
