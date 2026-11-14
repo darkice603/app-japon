@@ -8,13 +8,15 @@ export default function Connexion() {
   const [codeEnvoye, setCodeEnvoye] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
   const [enCours, setEnCours] = useState(false)
+  // « connexion » : compte existant seulement (évite de créer un compte sur une faute de frappe)
+  // « inscription » : crée le compte s'il n'existe pas (comptes partagés avec l'autre app du projet Supabase)
+  const [mode, setMode] = useState<'connexion' | 'inscription'>('connexion')
 
   async function envoyerCode(e: FormEvent) {
     e.preventDefault()
     setEnCours(true)
     setErreur(null)
-    // shouldCreateUser: false → connexion à un compte existant uniquement.
-    const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } })
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: mode === 'inscription' } })
     setEnCours(false)
     if (error) setErreur(traduire(error.message))
     else setCodeEnvoye(true)
@@ -36,7 +38,10 @@ export default function Connexion() {
     <main className="mx-auto flex min-h-svh max-w-md flex-col justify-center px-5 py-10">
       <img src="/icon.svg" alt="" className="h-20 w-20 rounded-[22px] bg-carte shadow-sm ring-1 ring-black/10" />
       <h1 className="mt-4 font-titre text-5xl leading-none tracking-tight">Tabi</h1>
-      <p className="mt-2 text-texte-2">Ton carnet de voyage au Japon. Connecte-toi avec le code reçu par e-mail.</p>
+      <p className="mt-2 text-texte-2">
+        Ton carnet de voyage au Japon.{' '}
+        {mode === 'connexion' ? 'Connecte-toi avec le code reçu par e-mail.' : 'Crée ton compte : un code te sera envoyé par e-mail.'}
+      </p>
 
       <div className="mt-6 rounded-carte bg-carte p-5 shadow-sm">
         {!supabaseConfigure ? (
@@ -54,7 +59,17 @@ export default function Connexion() {
             />
             {erreur && <p className="text-sm font-semibold text-manger-fonce">{erreur}</p>}
             <button type="submit" disabled={enCours} className={bouton}>
-              {enCours ? 'Envoi…' : 'Recevoir un code'}
+              {enCours ? 'Envoi…' : mode === 'connexion' ? 'Recevoir un code' : 'Créer mon compte'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode(mode === 'connexion' ? 'inscription' : 'connexion')
+                setErreur(null)
+              }}
+              className="min-h-11 w-full text-sm font-semibold text-texte-2"
+            >
+              {mode === 'connexion' ? 'Pas encore de compte ? Créer un compte' : 'Déjà un compte ? Se connecter'}
             </button>
           </form>
         ) : (
@@ -96,7 +111,7 @@ export default function Connexion() {
 }
 
 function traduire(message: string) {
-  if (/signups not allowed|user not found/i.test(message)) return 'Aucun compte avec cet e-mail.'
+  if (/signups not allowed|user not found/i.test(message)) return 'Aucun compte avec cet e-mail. Touche « Créer un compte » en dessous.'
   if (/expired|invalid/i.test(message)) return 'Code incorrect ou expiré.'
   if (/rate limit|security purposes/i.test(message)) return 'Trop de demandes : patiente une minute avant de redemander un code.'
   return message
