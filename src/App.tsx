@@ -1,20 +1,23 @@
-import { Route, Routes, useLocation } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
+import { Link, Route, Routes, useLocation } from 'react-router-dom'
 import NavFlottante from './components/NavFlottante'
-import { Link } from 'react-router-dom'
-import Restos from './screens/Restos'
-import Prefectures from './screens/Prefectures'
+import BandeauReseau from './components/BandeauReseau'
 import Connexion from './screens/Connexion'
 import Prenom from './screens/Prenom'
 import MesVoyages from './screens/MesVoyages'
-import AjouterLieu from './screens/AjouterLieu'
-import FicheLieu from './screens/FicheLieu'
-import Voyage from './screens/Voyage'
-import Carte from './screens/Carte'
-import Chercher from './screens/Chercher'
-import BudgetEcran from './screens/Budget'
-import Ville from './screens/Ville'
 import { useAuth } from './lib/auth'
 import { useProfil } from './lib/profil'
+
+// Écrans chargés à la demande
+const Restos = lazy(() => import('./screens/Restos'))
+const Prefectures = lazy(() => import('./screens/Prefectures'))
+const AjouterLieu = lazy(() => import('./screens/AjouterLieu'))
+const FicheLieu = lazy(() => import('./screens/FicheLieu'))
+const Voyage = lazy(() => import('./screens/Voyage'))
+const Carte = lazy(() => import('./screens/Carte'))
+const Chercher = lazy(() => import('./screens/Chercher'))
+const BudgetEcran = lazy(() => import('./screens/Budget'))
+const Ville = lazy(() => import('./screens/Ville'))
 
 export default function App() {
   const { session, chargement } = useAuth()
@@ -29,6 +32,8 @@ export default function App() {
 
   return (
     <>
+      {/* Chaque écran est chargé quand on l’ouvre (premier lancement plus rapide) */}
+      <Suspense fallback={<Attente />}>
       <Routes>
         <Route path="/" element={<MesVoyages />} />
         <Route path="/ajouter" element={<AjouterLieu />} />
@@ -43,8 +48,10 @@ export default function App() {
         <Route path="/prefectures" element={<Prefectures />} />
         <Route path="*" element={<Introuvable />} />
       </Routes>
+      </Suspense>
       {/* Pas de navigation sur la fiche lieu ni sur B4 (comme sur les maquettes) */}
       {!/^\/(lieu|ajouter|chercher|prefectures)/.test(pathname) && <NavFlottante />}
+      <BandeauReseau />
     </>
   )
 }

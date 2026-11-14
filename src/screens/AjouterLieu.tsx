@@ -7,6 +7,7 @@ import { CATEGORIES, categorie, libelleNote, type CategorieId } from '../lib/cat
 import { tauxJpyEur } from '../lib/change'
 import { aujourdhui } from '../lib/dates'
 import { useAuth } from '../lib/auth'
+import { ajouterTache, erreurReseau } from '../lib/attente'
 import { MAX_PHOTOS, envoyerPhoto, photosDuLieu, preparerPhoto, supprimerPhotos, type PhotoEnregistree, type PhotoPreparee } from '../lib/photos'
 import type { LieuGoogle } from './Chercher'
 
@@ -184,7 +185,7 @@ export default function AjouterLieu() {
     setEnCours(true)
     setErreur(null)
 
-    const { error: errLieu } = await supabase.from('places').upsert({
+    const ligneLieu = {
       id,
       stop_id: etape.id,
       name: nom.trim(),
@@ -198,8 +199,36 @@ export default function AjouterLieu() {
       google_place_id: googlePlaceId,
       lat: position?.lat ?? null,
       lng: position?.lng ?? null,
-    })
-    if (errLieu) return echec(errLieu.message)
+    }
+
+    // Sans réseau : un NOUVEAU lieu est gardé sur l'appareil et envoyé plus tard
+    const mettreEnAttente = async () => {
+      await ajouterTache({
+        id,
+        type: 'lieu',
+        cree: new Date().toISOString(),
+        nom: nom.trim(),
+        userId: session!.user.id,
+        place: ligneLieu,
+        articles: articles
+          .filter((a) => a.label.trim())
+          .map((a, i) => ({ id: a.id, place_id: id, label: a.label.trim(), price_jpy: Number(a.prix) || null, position: i })),
+        depense:
+          total > 0
+            ? { id: crypto.randomUUID(), trip_id: etape.trip_id, place_id: id, label: nom.trim(), amount_jpy: total, category: categorieActive.depense, spent_on: jourVisite || aujourdhui() }
+            : null,
+        photos: photosNouvelles.map((p) => ({ id: p.id, fichier: p.fichier, date: p.date, lat: p.lat, lng: p.lng })),
+      })
+      navigate('/', { replace: true })
+    }
+    if (!idExistant && !navigator.onLine) return mettreEnAttente()
+    if (idExistant && !navigator.onLine) return echec('Pas de réseau : la modification d’un lieu se fait en ligne. Réessaie plus tard.')
+
+    const { error: errLieu } = await supabase.from('places').upsert(ligneLieu)
+    if (errLieu) {
+      if (!idExistant && erreurReseau(errLieu.message)) return mettreEnAttente()
+      return echec(errLieu.message)
+    }
 
     // Ce que j'ai pris
     const gardes = articles.filter((a) => a.label.trim())

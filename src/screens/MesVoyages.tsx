@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useProfil } from '../lib/profil'
+import { deconnexion } from '../lib/auth'
 import FeuilleVoyage from '../components/FeuilleVoyage'
 import { aujourdhui, ecartJours, formatEuro, formatYen, moisAnnee } from '../lib/dates'
 
@@ -50,6 +51,11 @@ export default function MesVoyages() {
   }, [])
 
   useEffect(charger, [charger])
+  // Recharger quand des lieux ajoutés hors ligne viennent d'être envoyés
+  useEffect(() => {
+    window.addEventListener('japon:synchro', charger)
+    return () => window.removeEventListener('japon:synchro', charger)
+  }, [charger])
 
   const jour = aujourdhui()
   const voyages = donnees?.voyages ?? []
@@ -79,7 +85,7 @@ export default function MesVoyages() {
           {menu && (
             <div className="absolute right-0 top-14 z-10 w-48 rounded-carte bg-carte p-2 shadow-[0_10px_40px_rgba(0,0,0,0.12)]">
               <button
-                onClick={() => supabase.auth.signOut()}
+                onClick={() => deconnexion()}
                 className="min-h-11 w-full rounded-full px-4 text-left text-sm font-semibold hover:bg-fond"
               >
                 Se déconnecter

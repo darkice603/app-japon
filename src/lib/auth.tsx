@@ -20,3 +20,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export const useAuth = () => useContext(AuthContext)
+
+/**
+ * Déconnexion : on vide aussi les données gardées pour le hors ligne,
+ * pour qu'une autre personne connectée sur cet appareil ne les voie pas.
+ */
+export async function deconnexion() {
+  const { lireTaches } = await import('./attente')
+  const enAttente = (await lireTaches()).length
+  if (enAttente && !window.confirm(`${enAttente} élément(s) n'ont pas encore été envoyés et seront perdus. Se déconnecter quand même ?`)) return
+  if (enAttente) {
+    const { del } = await import('idb-keyval')
+    await del('japon:attente')
+  }
+  try {
+    for (const nom of ['japon-donnees', 'japon-unsplash']) await caches.delete(nom)
+  } catch {
+    /* pas de cache */
+  }
+  await supabase.auth.signOut()
+}

@@ -3,6 +3,7 @@ import Feuille, { styles } from './Feuille'
 import { supabase } from '../lib/supabase'
 import { tauxJpyEur } from '../lib/change'
 import { aujourdhui } from '../lib/dates'
+import { ajouterTache, erreurReseau } from '../lib/attente'
 import type { CategorieDepense } from '../lib/categories'
 
 export const CATEGORIES_DEPENSE: { id: CategorieDepense; label: string; kanji: string; vif: string; clair: string; fonce: string }[] = [
@@ -56,19 +57,34 @@ export default function FeuilleDepense({
     if (!yens) return setErreur('Indique le montant en yens.')
     setEnCours(true)
     setErreur(null)
-    const t = taux ?? (await tauxJpyEur(jour).catch(() => null))
-    const { error } = await supabase.from('expenses').upsert({
+    const ligne = {
       id: depense?.id ?? crypto.randomUUID(),
       trip_id: tripId,
+      place_id: null,
       label: libelle.trim() || null,
       amount_jpy: yens,
-      rate: t,
-      amount_eur: t ? Math.round(yens * t * 100) / 100 : null,
       category: categorie,
       spent_on: jour || aujourdhui(),
-    })
+    }
+    // Sans réseau : une NOUVELLE dépense est gardée sur l'appareil et envoyée plus tard
+    const mettreEnAttente = async () => {
+      await ajouterTache({ id: ligne.id, type: 'depense', cree: new Date().toISOString(), nom: ligne.label ?? 'Dépense', depense: ligne })
+      onEnregistre()
+    }
+    if (!navigator.onLine) {
+      if (!depense) return mettreEnAttente()
+      setEnCours(false)
+      return setErreur('Pas de réseau : la modification se fait en ligne. Réessaie plus tard.')
+    }
+    const t = taux ?? (await tauxJpyEur(jour).catch(() => null))
+    const { error } = await supabase
+      .from('expenses')
+      .upsert({ ...ligne, rate: t, amount_eur: t ? Math.round(yens * t * 100) / 100 : null })
     setEnCours(false)
-    if (error) return setErreur(error.message)
+    if (error) {
+      if (!depense && erreurReseau(error.message)) return mettreEnAttente()
+      return setErreur(error.message)
+    }
     onEnregistre()
   }
 
