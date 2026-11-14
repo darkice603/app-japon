@@ -2,9 +2,7 @@ import { Link } from 'react-router-dom'
 
 const liens = [
   ['/chercher', 'B3 Chercher'], ['/ajouter', 'B4 Ajouter'], ['/lieu/demo', 'B5 Fiche lieu'],
-  ['/restos', 'B6 Mes restos'], ['/ville/demo', 'B7 Ville'], ['/prefectures', 'B9 Préfectures'],
-  ['/connexion', 'Connexion'],
-]
+  ['/restos', 'B6 Mes restos'], ['/ville/demo', 'B7 Ville'], ['/prefectures', 'B9 Préfectures'],]
 
 /** Écran provisoire (étape 1) : titre + liens vers les écrans hors navigation. */
 export default function EcranVide({ code, titre }: { code: string; titre: string }) {
