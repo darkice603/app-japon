@@ -137,7 +137,7 @@ export default function Voyage() {
               })}
           </ul>
           <Link
-            to={`/ajouter?etape=${et.id}`}
+            to={`/chercher?etape=${et.id}`}
             className="mt-2 flex min-h-12 items-center justify-center gap-2 rounded-[22px] border-2 border-dashed border-black/15 text-sm font-semibold text-texte-2"
           >
             <span className="text-lg leading-none">+</span> Ajouter un lieu à {et.city}

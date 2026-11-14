@@ -253,7 +253,7 @@ function Journee({ jour, lieux, index, total, onJour, onReplier }: { jour: strin
       </div>
 
       <Link
-        to={`/ajouter?etape=${lieux[0]?.stop_id ?? ''}`}
+        to={`/chercher?etape=${lieux[0]?.stop_id ?? ''}`}
         className="mt-4 flex min-h-14 items-center justify-center rounded-full bg-encre text-lg font-bold text-white"
       >
         Ajouter un lieu ici

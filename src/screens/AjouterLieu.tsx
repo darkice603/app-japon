@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Feuille, { styles } from '../components/Feuille'
 import ChoixPosition from '../components/ChoixPosition'
 import { supabase } from '../lib/supabase'
 import { CATEGORIES, categorie, libelleNote, type CategorieId } from '../lib/categories'
 import { tauxJpyEur } from '../lib/change'
 import { aujourdhui } from '../lib/dates'
+import type { LieuGoogle } from './Chercher'
 
 type EtapeChoix = {
   id: string
@@ -27,21 +28,26 @@ export default function AjouterLieu() {
   const navigate = useNavigate()
   const { id: idExistant } = useParams()
   const [params] = useSearchParams()
+  // Lieu choisi dans la recherche Google (B3) : sert à préremplir le formulaire
+  const google = (useLocation().state as { google?: LieuGoogle } | null)?.google ?? null
 
   const [id] = useState(() => idExistant ?? crypto.randomUUID())
   const [etapes, setEtapes] = useState<EtapeChoix[] | null>(null)
   const [etapeId, setEtapeId] = useState('')
-  const [nom, setNom] = useState('')
-  const [nomJa, setNomJa] = useState('')
-  const [cat, setCat] = useState<CategorieId>('manger')
-  const [type, setType] = useState<string>('ramen')
+  const [nom, setNom] = useState(google?.nom ?? '')
+  const [nomJa, setNomJa] = useState(google?.nomJa ?? '')
+  const [cat, setCat] = useState<CategorieId>((google?.categorie as CategorieId) ?? 'manger')
+  const [type, setType] = useState<string>(google?.type ?? 'ramen')
   const [quand, setQuand] = useState(() => maintenantLocal())
   const [prix, setPrix] = useState('')
   const [articles, setArticles] = useState<Article[]>([])
   const [note, setNote] = useState<number | null>(null)
   const [retour, setRetour] = useState<Retour | null>(null)
   const [notePerso, setNotePerso] = useState('')
-  const [position, setPosition] = useState<{ lat: number; lng: number } | null>(null)
+  const [position, setPosition] = useState<{ lat: number; lng: number } | null>(
+    google?.lat != null && google?.lng != null ? { lat: google.lat, lng: google.lng } : null,
+  )
+  const [googlePlaceId, setGooglePlaceId] = useState<string | null>(google?.placeId ?? null)
   const [taux, setTaux] = useState<number | null>(null)
   const [depenseId, setDepenseId] = useState<string | null>(null)
   const [articlesInitiaux, setArticlesInitiaux] = useState<string[]>([])
@@ -83,6 +89,7 @@ export default function AjouterLieu() {
       setRetour(l.would_return)
       setNotePerso(l.note ?? '')
       if (l.lat != null && l.lng != null) setPosition({ lat: l.lat, lng: l.lng })
+      setGooglePlaceId(l.google_place_id ?? null)
       setArticles((items.data ?? []).map((a) => ({ id: a.id, label: a.label, prix: a.price_jpy?.toString() ?? '' })))
       setArticlesInitiaux((items.data ?? []).map((a) => a.id))
       if (depense.data) {
@@ -160,6 +167,7 @@ export default function AjouterLieu() {
       rating: note,
       would_return: retour,
       note: notePerso.trim() || null,
+      google_place_id: googlePlaceId,
       lat: position?.lat ?? null,
       lng: position?.lng ?? null,
     })
@@ -240,6 +248,18 @@ export default function AjouterLieu() {
           <form onSubmit={enregistrer} className="space-y-7 pb-2">
             {/* Le lieu */}
             <div className="rounded-[26px] bg-fond p-4">
+              {!idExistant && (
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-texte-2">{googlePlaceId ? 'Trouvé sur Google' : 'Saisie manuelle'}</p>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/chercher${etapeId ? `?etape=${etapeId}` : ''}`, { replace: true })}
+                    className="min-h-10 rounded-full border border-black/15 bg-white px-4 text-sm font-bold"
+                  >
+                    {googlePlaceId ? 'Changer' : 'Chercher sur Google'}
+                  </button>
+                </div>
+              )}
               <div className="flex items-center gap-4">
                 <div
                   className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] font-kanji text-3xl text-white"

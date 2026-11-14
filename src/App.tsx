@@ -8,11 +8,11 @@ import AjouterLieu from './screens/AjouterLieu'
 import FicheLieu from './screens/FicheLieu'
 import Voyage from './screens/Voyage'
 import Carte from './screens/Carte'
+import Chercher from './screens/Chercher'
 import { useAuth } from './lib/auth'
 import { useProfil } from './lib/profil'
 
 const ecrans = [
-  { path: '/chercher', code: 'B3', titre: 'Chercher un lieu' },
   { path: '/restos', code: 'B6', titre: 'Mes restos' },
   { path: '/ville/:id', code: 'B7', titre: 'Ville' },
   { path: '/budget', code: 'B8', titre: 'Budget' },
@@ -39,13 +39,14 @@ export default function App() {
         <Route path="/lieu/:id" element={<FicheLieu />} />
         <Route path="/voyage/:id" element={<Voyage />} />
         <Route path="/carte" element={<Carte />} />
+        <Route path="/chercher" element={<Chercher />} />
         {ecrans.map((e) => (
           <Route key={e.path} path={e.path} element={<EcranVide code={e.code} titre={e.titre} />} />
         ))}
         <Route path="*" element={<EcranVide code="404" titre="Page introuvable" />} />
       </Routes>
       {/* Pas de navigation sur la fiche lieu ni sur B4 (comme sur les maquettes) */}
-      {!/^\/(lieu|ajouter)/.test(pathname) && <NavFlottante />}
+      {!/^\/(lieu|ajouter|chercher)/.test(pathname) && <NavFlottante />}
     </>
   )
 }

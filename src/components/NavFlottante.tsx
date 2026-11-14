@@ -34,7 +34,7 @@ export default function NavFlottante() {
       <div className="flex items-center gap-1 rounded-full bg-carte p-2 shadow-[0_10px_40px_rgba(0,0,0,0.10)]">
         {onglets.map((o) =>
           o === null ? (
-            <NavLink key="plus" to="/ajouter" aria-label="Ajouter un lieu" className="mx-1 flex h-12 w-12 items-center justify-center rounded-full bg-manger text-encre">
+            <NavLink key="plus" to="/chercher" aria-label="Ajouter un lieu" className="mx-1 flex h-12 w-12 items-center justify-center rounded-full bg-manger text-encre">
               <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
             </NavLink>
           ) : (
